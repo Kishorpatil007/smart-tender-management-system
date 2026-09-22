@@ -2,6 +2,9 @@ const dns = require('dns');
 
 dns.setDefaultResultOrder('ipv4first');
 
+console.log('[NETWORK] DNS result order:', dns.getDefaultResultOrder());
+
+// Everything else below this
 require('dotenv').config();
 
 // your existing imports below
