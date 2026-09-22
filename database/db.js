@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const connectionString = process.env.DATABASE_URL ||
@@ -230,6 +231,40 @@ const initSchema = async () => {
   await safeAddColumn('password_resets', "type TEXT DEFAULT 'PASSWORD_RESET'");
 
   console.log('Database tables initialized successfully for MIT Chhatrapati Sambhajinagar.');
+      // Bootstrap first administrator if none exists
+    const adminCheck = await dbHelper.get(
+      "SELECT COUNT(*) AS count FROM users WHERE role = 'admin'"
+    );
+
+    if (Number(adminCheck.count) === 0) {
+      const adminEmail = process.env.INITIAL_ADMIN_EMAIL;
+      const adminPassword = process.env.INITIAL_ADMIN_PASSWORD;
+
+      if (!adminEmail || !adminPassword) {
+        console.warn(
+          '[ADMIN BOOTSTRAP] No admin exists and INITIAL_ADMIN_EMAIL / INITIAL_ADMIN_PASSWORD are not configured.'
+        );
+      } else {
+        const hashedPassword = bcrypt.hashSync(adminPassword, 10);
+
+        await dbHelper.run(
+          `INSERT INTO users
+           (name, email, password, role, department, status,
+            email_verified, failed_login_attempts, locked_until)
+           VALUES (?, ?, ?, 'admin', ?, 'active', TRUE, 0, NULL)`,
+          [
+            'System Administrator',
+            adminEmail.toLowerCase().trim(),
+            hashedPassword,
+            'Central Administration'
+          ]
+        );
+
+        console.log(
+          `[ADMIN BOOTSTRAP] Initial administrator created: ${adminEmail}`
+        );
+      }
+    }
 };
 
 module.exports = {
