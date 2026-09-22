@@ -12,10 +12,8 @@ const nodemailer = require('nodemailer');
 
 class EmailService {
   constructor() {
-    // Default to SMTP for production
     this.provider = process.env.EMAIL_SERVICE || 'smtp';
 
-    // Sender address
     this.fromAddress =
       process.env.EMAIL_FROM ||
       process.env.SMTP_USER ||
@@ -23,29 +21,27 @@ class EmailService {
 
     this.transporter = null;
 
-    /*
-     * Create SMTP transporter when SMTP credentials are available.
-     */
     if (
       process.env.SMTP_HOST &&
       process.env.SMTP_USER &&
       process.env.SMTP_PASS
     ) {
       try {
-            this.transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT, 10) || 587,
-            secure: process.env.SMTP_SECURE === 'true',
-
-            auth: {
+        this.transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: parseInt(process.env.SMTP_PORT, 10) || 587,
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS
-            },
-
-            connectionTimeout: 30000,
-            greetingTimeout: 30000,
-            socketTimeout: 30000
-});
+          },
+          connectionTimeout: 30000,
+          greetingTimeout: 30000,
+          socketTimeout: 30000,
+          tls: {
+            rejectUnauthorized: true
+          }
+        });
 
         console.log(
           `[EMAIL SERVICE] SMTP transporter initialized: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT || 587}`
@@ -68,10 +64,10 @@ class EmailService {
    * Used in emails instead of localhost.
    */
   getAppUrl() {
-    return (
-      process.env.APP_URL ||
-      'http://localhost:3000'
-    ).replace(/\/$/, '');
+    if (!process.env.APP_URL) {
+      throw new Error('APP_URL is not configured on the server.');
+    }
+    return process.env.APP_URL.replace(/\/$/, '');
   }
 
   /**
@@ -623,10 +619,7 @@ MIT Chhatrapati Sambhajinagar`;
   /**
    * Internal email dispatcher
    *
-   * IMPORTANT:
-   * - If SMTP is configured, REAL email is sent.
-   * - SMTP errors are NOT hidden.
-   * - Simulator is used only when EMAIL_SERVICE=simulator.
+   * If SMTP is configured, real email is sent and failures are surfaced.
    */
   async _dispatchEmail({
     to,
@@ -636,11 +629,6 @@ MIT Chhatrapati Sambhajinagar`;
     type,
     meta
   }) {
-    /*
-     * ============================================================
-     * PRODUCTION SMTP
-     * ============================================================
-     */
     if (this.transporter) {
       try {
         const info = await this.transporter.sendMail({
@@ -664,7 +652,6 @@ MIT Chhatrapati Sambhajinagar`;
           simulated: false,
           messageId: info.messageId
         };
-
       } catch (err) {
         console.error(
           '[SMTP EMAIL TRANSPORT ERROR]',
@@ -677,45 +664,6 @@ MIT Chhatrapati Sambhajinagar`;
       }
     }
 
-    /*
-     * ============================================================
-     * DEVELOPMENT SIMULATOR
-     * ============================================================
-     */
-    if (this.provider === 'simulator') {
-      console.log('\n========================================');
-      console.log('[INSTITUTIONAL EMAIL SERVICE] SIMULATOR');
-      console.log(`From:    ${this.fromAddress}`);
-      console.log(`To:      ${to}`);
-      console.log(`Subject: ${subject}`);
-      console.log(`Type:    ${type}`);
-
-      if (meta && meta.otp) {
-        console.log(`OTP:     ${meta.otp}`);
-      }
-
-      if (meta && meta.token) {
-        console.log(`Token:   ${meta.token}`);
-      }
-
-      if (meta && meta.invitationLink) {
-        console.log(`Link:    ${meta.invitationLink}`);
-      }
-
-      console.log('========================================\n');
-
-      return {
-        success: true,
-        simulated: true,
-        timestamp: new Date().toISOString()
-      };
-    }
-
-    /*
-     * ============================================================
-     * NO EMAIL CONFIGURATION
-     * ============================================================
-     */
     throw new Error(
       'Email service is not configured. SMTP transporter is unavailable.'
     );

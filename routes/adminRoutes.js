@@ -152,38 +152,63 @@ router.post('/staff-requests/:id/approve', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Only Tender Authority or Evaluator requests can be approved via this endpoint.' });
     }
 
-    // Generate cryptographic invitation token & 48-hour expiration
+    if (user.status === 'invited') {
+      return res.status(409).json({
+        success: false,
+        message: 'This staff request has already been approved. The invitation has already been issued.'
+      });
+    }
+
+    if (user.status === 'active') {
+      return res.status(409).json({
+        success: false,
+        message: 'This staff account is already active and does not require another invitation.'
+      });
+    }
+
+    if (user.status === 'rejected') {
+      return res.status(400).json({
+        success: false,
+        message: 'This staff request was rejected and cannot be re-approved through this route.'
+      });
+    }
+
+    const appUrl = process.env.APP_URL;
+    if (!appUrl) {
+      return res.status(500).json({
+        success: false,
+        message: 'APP_URL is not configured on the server.'
+      });
+    }
+
     const invitationToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    const invitationLink = `${appUrl.replace(/\/$/, '')}/#set-password?token=${invitationToken}&email=${encodeURIComponent(user.email)}`;
+
+    try {
+      await emailService.sendStaffInvitation(
+        user.email,
+        user.name,
+        user.role,
+        invitationLink,
+        invitationToken,
+        user.employee_id,
+        user.designation,
+        user.department
+      );
+    } catch (emailError) {
+      console.error('Staff invitation email failed:', emailError);
+      return res.status(500).json({
+        success: false,
+        message: `Invitation email could not be delivered: ${emailError.message}`
+      });
+    }
 
     await dbHelper.run(
       `UPDATE users
        SET status = 'invited', invitation_token = ?, invitation_expires_at = ?
        WHERE id = ?`,
       [invitationToken, expiresAt, userId]
-    );
-
-   const appUrl = process.env.APP_URL;
-
-if (!appUrl) {
-  return res.status(500).json({
-    success: false,
-    message: 'APP_URL is not configured on the server.'
-  });
-}
-
-const invitationLink =
-  `${appUrl.replace(/\/$/, '')}/#set-password?token=${invitationToken}&email=${encodeURIComponent(user.email)}`;
-
-    await emailService.sendStaffInvitation(
-      user.email,
-      user.name,
-      user.role,
-      invitationLink,
-      invitationToken,
-      user.employee_id,
-      user.designation,
-      user.department
     );
 
     await logAudit(
