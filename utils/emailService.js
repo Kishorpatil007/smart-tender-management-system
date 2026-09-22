@@ -1,13 +1,22 @@
+
 require('dotenv').config();
+
 const nodemailer = require('nodemailer');
 
 /**
  * Enterprise Email Service
  * Maharashtra Institute of Technology (MIT), Chhatrapati Sambhajinagar
  *
- * Supports:
- * 1. Production SMTP
- * 2. Institutional Simulator for development/testing
+ * Uses production SMTP through Nodemailer.
+ *
+ * SMTP configuration is supplied through environment variables:
+ * SMTP_HOST
+ * SMTP_PORT
+ * SMTP_SECURE
+ * SMTP_USER
+ * SMTP_PASS
+ * EMAIL_FROM
+ * APP_URL
  */
 
 class EmailService {
@@ -31,13 +40,16 @@ class EmailService {
           host: process.env.SMTP_HOST,
           port: parseInt(process.env.SMTP_PORT, 10) || 587,
           secure: process.env.SMTP_SECURE === 'true',
+
           auth: {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS
           },
+
           connectionTimeout: 30000,
           greetingTimeout: 30000,
           socketTimeout: 30000,
+
           tls: {
             rejectUnauthorized: true
           }
@@ -46,6 +58,7 @@ class EmailService {
         console.log(
           `[EMAIL SERVICE] SMTP transporter initialized: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT || 587}`
         );
+
       } catch (err) {
         console.error(
           '[EMAIL SERVICE] SMTP transporter initialization failed:',
@@ -61,19 +74,25 @@ class EmailService {
 
   /**
    * Get application URL.
-   * Used in emails instead of localhost.
    */
   getAppUrl() {
     if (!process.env.APP_URL) {
-      throw new Error('APP_URL is not configured on the server.');
+      throw new Error(
+        'APP_URL is not configured on the server.'
+      );
     }
+
     return process.env.APP_URL.replace(/\/$/, '');
   }
 
   /**
-   * Dispatch email verification OTP
+   * Dispatch email verification OTP.
    */
-  async sendEmailVerificationOTP(toEmail, recipientName, otp) {
+  async sendEmailVerificationOTP(
+    toEmail,
+    recipientName,
+    otp
+  ) {
     const subject =
       'MIT E-Tender Portal — Email Verification Code';
 
@@ -87,16 +106,23 @@ Maharashtra Institute of Technology (MIT), Chhatrapati Sambhajinagar`;
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-        <h2 style="color: #1a56db;">Maharashtra Institute of Technology (MIT)</h2>
+        <h2 style="color: #1a56db;">
+          Maharashtra Institute of Technology (MIT)
+        </h2>
+
         <p style="color: #64748b; font-size: 14px;">
           Chhatrapati Sambhajinagar • Smart E-Tender Management System
         </p>
 
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <p>Dear <strong>${recipientName}</strong>,</p>
+        <p>
+          Dear <strong>${recipientName}</strong>,
+        </p>
 
-        <p>Your 6-digit email verification code is:</p>
+        <p>
+          Your 6-digit email verification code is:
+        </p>
 
         <div style="background: #f1f5f9; padding: 15px; border-radius: 6px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #1a56db;">
           ${otp}
@@ -114,14 +140,20 @@ Maharashtra Institute of Technology (MIT), Chhatrapati Sambhajinagar`;
       text,
       html,
       type: 'EMAIL_VERIFICATION',
-      meta: { otp, recipientName }
+      meta: {
+        recipientName
+      }
     });
   }
 
   /**
-   * Dispatch password reset OTP
+   * Dispatch password reset OTP.
    */
-  async sendPasswordResetOTP(toEmail, recipientName, otp) {
+  async sendPasswordResetOTP(
+    toEmail,
+    recipientName,
+    otp
+  ) {
     const subject =
       'MIT E-Tender Portal — Password Reset Code';
 
@@ -139,7 +171,9 @@ Maharashtra Institute of Technology (MIT), Chhatrapati Sambhajinagar`;
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-        <h2 style="color: #1a56db;">Maharashtra Institute of Technology (MIT)</h2>
+        <h2 style="color: #1a56db;">
+          Maharashtra Institute of Technology (MIT)
+        </h2>
 
         <p style="color: #64748b; font-size: 14px;">
           Chhatrapati Sambhajinagar • Security & Authentication Desk
@@ -147,9 +181,13 @@ Maharashtra Institute of Technology (MIT), Chhatrapati Sambhajinagar`;
 
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <p>Dear <strong>${recipientName || 'User'}</strong>,</p>
+        <p>
+          Dear <strong>${recipientName || 'User'}</strong>,
+        </p>
 
-        <p>We received a password reset request. Your 6-digit verification code is:</p>
+        <p>
+          We received a password reset request. Your 6-digit verification code is:
+        </p>
 
         <div style="background: #f1f5f9; padding: 15px; border-radius: 6px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #dc2626;">
           ${otp}
@@ -167,12 +205,14 @@ Maharashtra Institute of Technology (MIT), Chhatrapati Sambhajinagar`;
       text,
       html,
       type: 'PASSWORD_RESET',
-      meta: { otp, recipientName }
+      meta: {
+        recipientName
+      }
     });
   }
 
   /**
-   * Account approval notification
+   * Account approval notification.
    */
   async sendAccountApprovedNotification(
     toEmail,
@@ -193,6 +233,7 @@ You may now sign in to access your procurement desk at:
 ${appUrl}
 
 Central Purchase & Administration Office,
+
 MIT Chhatrapati Sambhajinagar`;
 
     const html = `
@@ -208,7 +249,9 @@ MIT Chhatrapati Sambhajinagar`;
 
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <p>Dear <strong>${recipientName}</strong>,</p>
+        <p>
+          Dear <strong>${recipientName}</strong>,
+        </p>
 
         <p>
           Your account has been officially approved with role:
@@ -217,7 +260,9 @@ MIT Chhatrapati Sambhajinagar`;
           </strong>.
         </p>
 
-        <p>You may now sign in to access your e-procurement workspace.</p>
+        <p>
+          You may now sign in to access your e-procurement workspace.
+        </p>
 
         <div style="text-align: center; margin: 20px 0;">
           <a href="${appUrl}"
@@ -235,12 +280,15 @@ MIT Chhatrapati Sambhajinagar`;
       text,
       html,
       type: 'ACCOUNT_APPROVED',
-      meta: { role, recipientName }
+      meta: {
+        role,
+        recipientName
+      }
     });
   }
 
   /**
-   * Staff access request received
+   * Staff access request received.
    */
   async sendStaffAccessRequestReceived(
     toEmail,
@@ -262,6 +310,7 @@ MIT Chhatrapati Sambhajinagar`;
 Your institutional access request for [${roleLabel}] has been received by the Central Administration Office.
 
 Employee ID: ${employeeId || 'N/A'}
+
 Department: ${department || 'N/A'}
 
 Our administration team will verify your credentials and dispatch an official invitation link to configure your account password upon approval.
@@ -281,7 +330,9 @@ Maharashtra Institute of Technology (MIT), Chhatrapati Sambhajinagar`;
 
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <p>Dear <strong>${recipientName}</strong>,</p>
+        <p>
+          Dear <strong>${recipientName}</strong>,
+        </p>
 
         <p>
           Your access request for institutional role:
@@ -330,7 +381,7 @@ Maharashtra Institute of Technology (MIT), Chhatrapati Sambhajinagar`;
   }
 
   /**
-   * Official staff invitation
+   * Official staff invitation.
    */
   async sendStaffInvitation(
     toEmail,
@@ -355,7 +406,9 @@ Maharashtra Institute of Technology (MIT), Chhatrapati Sambhajinagar`;
 Your institutional access request for [${roleLabel}] has been verified and approved by Central Administration.
 
 Designation: ${designation || 'Faculty / Officer'}
+
 Employee ID: ${employeeId || 'N/A'}
+
 Department: ${department || 'N/A'}
 
 Please configure your secure account password using this official invitation link:
@@ -367,7 +420,9 @@ Activation Token: ${token}
 This invitation link is valid for 48 hours.
 
 Central Administration,
+
 Maharashtra Institute of Technology (MIT),
+
 Chhatrapati Sambhajinagar`;
 
     const html = `
@@ -383,7 +438,9 @@ Chhatrapati Sambhajinagar`;
 
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <p>Dear <strong>${recipientName}</strong>,</p>
+        <p>
+          Dear <strong>${recipientName}</strong>,
+        </p>
 
         <p>
           Your institutional access request has been
@@ -429,6 +486,7 @@ Chhatrapati Sambhajinagar`;
         <div style="background: #f8fafc; padding: 10px; border-radius: 4px; font-size: 12px; color: #64748b; word-break: break-all;">
 
           <strong>Direct URL:</strong>
+
           <a href="${invitationLink}">
             ${invitationLink}
           </a>
@@ -456,14 +514,13 @@ Chhatrapati Sambhajinagar`;
       meta: {
         role,
         recipientName,
-        token,
         invitationLink
       }
     });
   }
 
   /**
-   * Staff rejection notification
+   * Staff rejection notification.
    */
   async sendStaffRejectionNotification(
     toEmail,
@@ -479,6 +536,7 @@ Chhatrapati Sambhajinagar`;
 Your institutional access request as [${role.toUpperCase()}] could not be approved at this time.
 
 Reason:
+
 ${reason || 'Details could not be verified with college records.'}
 
 If you believe this is an error, please contact the Central Administration Office.
@@ -498,7 +556,9 @@ MIT Chhatrapati Sambhajinagar`;
 
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <p>Dear <strong>${recipientName}</strong>,</p>
+        <p>
+          Dear <strong>${recipientName}</strong>,
+        </p>
 
         <p>
           Your access request for role
@@ -542,7 +602,7 @@ MIT Chhatrapati Sambhajinagar`;
   }
 
   /**
-   * Password set success notification
+   * Password set success notification.
    */
   async sendPasswordSetSuccessNotification(
     toEmail,
@@ -561,9 +621,11 @@ Your password for the MIT E-Tender Portal has been successfully set.
 Your account is now fully active with [${role.toUpperCase()}] privileges.
 
 Sign in at:
+
 ${appUrl}
 
 Central Purchase & Administration Office,
+
 MIT Chhatrapati Sambhajinagar`;
 
     const html = `
@@ -579,7 +641,9 @@ MIT Chhatrapati Sambhajinagar`;
 
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <p>Dear <strong>${recipientName}</strong>,</p>
+        <p>
+          Dear <strong>${recipientName}</strong>,
+        </p>
 
         <p>
           Your password has been configured and your institutional account
@@ -617,9 +681,10 @@ MIT Chhatrapati Sambhajinagar`;
   }
 
   /**
-   * Internal email dispatcher
+   * Internal email dispatcher.
    *
-   * If SMTP is configured, real email is sent and failures are surfaced.
+   * Sends real email through the configured SMTP server.
+   * SMTP failures are surfaced to the calling route.
    */
   async _dispatchEmail({
     to,
@@ -629,45 +694,51 @@ MIT Chhatrapati Sambhajinagar`;
     type,
     meta
   }) {
-    if (this.transporter) {
-      try {
-        const info = await this.transporter.sendMail({
-          from: this.fromAddress,
-          to,
-          subject,
-          text,
-          html
-        });
-
-        console.log(
-          `[SMTP EMAIL TRANSPORT] Sent "${subject}" to <${to}>`
-        );
-
-        console.log(
-          `[SMTP EMAIL TRANSPORT] Message ID: ${info.messageId}`
-        );
-
-        return {
-          success: true,
-          simulated: false,
-          messageId: info.messageId
-        };
-      } catch (err) {
-        console.error(
-          '[SMTP EMAIL TRANSPORT ERROR]',
-          err
-        );
-
-        throw new Error(
-          `Email delivery failed: ${err.message}`
-        );
-      }
+    if (!this.transporter) {
+      throw new Error(
+        'Email service is not configured. SMTP transporter is unavailable.'
+      );
     }
 
-    throw new Error(
-      'Email service is not configured. SMTP transporter is unavailable.'
-    );
+    try {
+      console.log(
+        `[SMTP DEBUG] Connecting to ${process.env.SMTP_HOST}:${process.env.SMTP_PORT || 587}`
+      );
+
+      const info = await this.transporter.sendMail({
+        from: this.fromAddress,
+        to,
+        subject,
+        text,
+        html
+      });
+
+      console.log(
+        `[SMTP EMAIL TRANSPORT] Sent "${subject}" to <${to}>`
+      );
+
+      console.log(
+        `[SMTP EMAIL TRANSPORT] Message ID: ${info.messageId}`
+      );
+
+      return {
+        success: true,
+        simulated: false,
+        messageId: info.messageId
+      };
+
+    } catch (err) {
+      console.error(
+        '[SMTP EMAIL TRANSPORT ERROR]',
+        err
+      );
+
+      throw new Error(
+        `Email delivery failed: ${err.message}`
+      );
+    }
   }
 }
 
 module.exports = new EmailService();
+```
