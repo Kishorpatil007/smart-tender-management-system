@@ -1,4 +1,11 @@
+const dns = require('dns');
+
+dns.setDefaultResultOrder('ipv4first');
+
 require('dotenv').config();
+
+// your existing imports below
+const express = require('express');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');

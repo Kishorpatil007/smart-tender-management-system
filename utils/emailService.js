@@ -33,19 +33,18 @@ class EmailService {
     ) {
       try {
             this.transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT, 10) || 465,
-  secure: process.env.SMTP_SECURE === 'true',
-  family: 4,
+            host: process.env.SMTP_HOST,
+            port: parseInt(process.env.SMTP_PORT, 10) || 587,
+            secure: process.env.SMTP_SECURE === 'true',
 
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  },
+            auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+            },
 
-  connectionTimeout: 15000,
-  greetingTimeout: 15000,
-  socketTimeout: 20000
+            connectionTimeout: 30000,
+            greetingTimeout: 30000,
+            socketTimeout: 30000
 });
 
         console.log(
