@@ -163,9 +163,17 @@ router.post('/staff-requests/:id/approve', async (req, res) => {
       [invitationToken, expiresAt, userId]
     );
 
-    const host = req.get('host') || 'localhost:3000';
-    const protocol = req.protocol || 'http';
-    const invitationLink = `${protocol}://${host}/#set-password?token=${invitationToken}&email=${encodeURIComponent(user.email)}`;
+   const appUrl = process.env.APP_URL;
+
+if (!appUrl) {
+  return res.status(500).json({
+    success: false,
+    message: 'APP_URL is not configured on the server.'
+  });
+}
+
+const invitationLink =
+  `${appUrl.replace(/\/$/, '')}/#set-password?token=${invitationToken}&email=${encodeURIComponent(user.email)}`;
 
     await emailService.sendStaffInvitation(
       user.email,
@@ -257,7 +265,6 @@ router.post('/users', async (req, res) => {
       return res.status(400).json({ success: false, message: 'An account with this email address already exists.' });
     }
 
-    const bcrypt = require('bcryptjs');
     const hashedPassword = bcrypt.hashSync(password, 10);
 
     const userResult = await dbHelper.run(
