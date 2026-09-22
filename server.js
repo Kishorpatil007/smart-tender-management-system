@@ -73,30 +73,27 @@ const startServer = async () => {
   try {
     await initSchema();
 
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`\n========================================================================`);
       console.log(`  MAHARASHTRA INSTITUTE OF TECHNOLOGY (MIT), CHHATRAPATI SAMBHAJINAGAR`);
       console.log(`  SMART E-TENDER SYSTEM ACTIVE [ENTERPRISE SECURITY ENABLED]`);
-      console.log(`  ACCESS URL: http://localhost:${PORT}`);
+      console.log(`  SERVER LISTENING ON PORT: ${PORT}`);
       console.log(`========================================================================\n`);
     });
 
     server.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
-        const nextPort = Number(PORT) + 1;
-        console.warn(`⚠️ Port ${PORT} is busy, switching to fallback port ${nextPort}...`);
-        app.listen(nextPort, () => {
-          console.log(`\n========================================================================`);
-          console.log(`  SMART E-TENDER SYSTEM RUNNING ON FALLBACK PORT`);
-          console.log(`  ACCESS URL: http://localhost:${nextPort}`);
-          console.log(`========================================================================\n`);
-        });
+        console.error(`Port ${PORT} is already in use.`);
+        process.exit(1);
       } else {
         console.error('Server error:', err);
+        process.exit(1);
       }
     });
+
   } catch (error) {
     console.error('Failed to start server:', error);
+    process.exit(1);
   }
 };
 
