@@ -1,13 +1,37 @@
 const dns = require('dns');
+const net = require('net');
 
 dns.resolve4('smtp.gmail.com', (err, addresses) => {
   if (err) {
     console.error('[GMAIL IPV4 DNS ERROR]', err);
-  } else {
-    console.log('[GMAIL IPV4 ADDRESSES]', addresses);
+    return;
   }
-});
 
+  console.log('[GMAIL IPV4 ADDRESSES]', addresses);
+
+  const ip = addresses[0];
+
+  const socket = net.createConnection({
+    host: ip,
+    port: 587,
+    family: 4,
+    timeout: 10000
+  });
+
+  socket.on('connect', () => {
+    console.log(`[GMAIL IPV4 CONNECTION] SUCCESS ${ip}:587`);
+    socket.destroy();
+  });
+
+  socket.on('timeout', () => {
+    console.error(`[GMAIL IPV4 CONNECTION] TIMEOUT ${ip}:587`);
+    socket.destroy();
+  });
+
+  socket.on('error', (error) => {
+    console.error('[GMAIL IPV4 CONNECTION] ERROR', error);
+  });
+});
 // Everything else below this
 require('dotenv').config();
 
