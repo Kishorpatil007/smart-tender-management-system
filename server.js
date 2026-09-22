@@ -1,8 +1,12 @@
 const dns = require('dns');
 
-dns.setDefaultResultOrder('ipv4first');
-
-console.log('[NETWORK] DNS result order:', dns.getDefaultResultOrder());
+dns.resolve4('smtp.gmail.com', (err, addresses) => {
+  if (err) {
+    console.error('[GMAIL IPV4 DNS ERROR]', err);
+  } else {
+    console.log('[GMAIL IPV4 ADDRESSES]', addresses);
+  }
+});
 
 // Everything else below this
 require('dotenv').config();
