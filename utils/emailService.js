@@ -33,22 +33,20 @@ class EmailService {
     ) {
       try {
             this.transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT, 10) || 587,
-            secure: process.env.SMTP_SECURE === 'true',
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT, 10) || 465,
+  secure: process.env.SMTP_SECURE === 'true',
+  family: 4,
 
-           // Force Node/Nodemailer to use IPv4
-            family: 4,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  },
 
-            auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-          },
-
-            connectionTimeout: 15000,
-            greetingTimeout: 15000,
-            socketTimeout: 20000
-      });
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000
+});
 
         console.log(
           `[EMAIL SERVICE] SMTP transporter initialized: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT || 587}`
